@@ -1,0 +1,15 @@
+{
+  "name": "command-center-backend",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "simple-git": "^3.22.0",
+    "chokidar": "^3.5.3"
+  }
+}
