@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #1a1a1a;
+  --background: #ffffff;
+  --border: #e5e5e5;
+  --muted: #737373;
+  --accent: #22c55e;
+}
+
+body {
+  font-family: "Times New Roman", Times, serif;
+  background: var(--background);
+  color: var(--foreground);
+}
