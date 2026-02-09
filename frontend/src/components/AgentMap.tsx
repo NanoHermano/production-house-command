@@ -196,6 +196,40 @@ export default function AgentMap() {
     setSaving(false);
   };
 
+  const handleStartAgent = async (agentId: string) => {
+    if (!agentId || agentId === 'hazar' || agentId === 'john') return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agents/${agentId}/start`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNodes(nds => nds.map(n => 
+          n.id === agentId ? { ...n, data: { ...n.data, status: 'online' } } : n
+        ));
+      }
+    } catch (err) {
+      console.error('Failed to start agent:', err);
+    }
+  };
+
+  const handleStopAgent = async (agentId: string) => {
+    if (!agentId || agentId === 'hazar' || agentId === 'john') return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/agents/${agentId}/stop`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNodes(nds => nds.map(n => 
+          n.id === agentId ? { ...n, data: { ...n.data, status: 'offline' } } : n
+        ));
+      }
+    } catch (err) {
+      console.error('Failed to stop agent:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-[600px] flex items-center justify-center text-zinc-500">
@@ -239,6 +273,22 @@ export default function AgentMap() {
             <span className="ml-auto px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-300">
               {selectedNode.data.level?.replace(/\*\*/g, '')}
             </span>
+          </div>
+
+          {/* Agent Controls */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => selectedAgent && handleStartAgent(selectedAgent)}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded text-sm font-medium transition-colors"
+            >
+              ▶ Start
+            </button>
+            <button
+              onClick={() => selectedAgent && handleStopAgent(selectedAgent)}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm font-medium transition-colors"
+            >
+              ■ Stop
+            </button>
           </div>
 
           {selectedAgent === 'john' ? (

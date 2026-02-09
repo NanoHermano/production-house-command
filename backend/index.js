@@ -132,6 +132,89 @@ app.put('/api/agents/:id/status', (req, res) => {
   res.json({ success: true });
 });
 
+// Agent Start/Stop
+app.post('/api/agents/:id/start', (req, res) => {
+  const { id } = req.params;
+  const SWARM_DIR = '/Users/hazar/.openclaw/swarm';
+  const pidFile = path.join(SWARM_DIR, id, '.pid');
+  const configFile = path.join(SWARM_DIR, id, 'clawdbot.json');
+  const logFile = path.join(SWARM_DIR, 'logs', `${id}.log`);
+  
+  // Check if already running
+  if (fs.existsSync(pidFile)) {
+    try {
+      const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim());
+      process.kill(pid, 0); // Check if process exists
+      return res.json({ success: false, error: 'Agent already running', pid });
+    } catch (e) {
+      // Process doesn't exist, clean up pid file
+      fs.unlinkSync(pidFile);
+    }
+  }
+  
+  // Check if config exists
+  if (!fs.existsSync(configFile)) {
+    return res.json({ success: false, error: 'Agent config not found' });
+  }
+  
+  // Start the agent
+  const cmd = `cd ${path.join(SWARM_DIR, id)} && nohup openclaw gateway start --config ${configFile} >> ${logFile} 2>&1 & echo $!`;
+  
+  exec(cmd, (error, stdout, stderr) => {
+    if (error) {
+      return res.json({ success: false, error: error.message });
+    }
+    
+    const pid = stdout.trim();
+    fs.writeFileSync(pidFile, pid);
+    
+    // Update status
+    const statuses = loadJSON(AGENT_STATUS_FILE, {});
+    statuses[id] = 'online';
+    saveJSON(AGENT_STATUS_FILE, statuses);
+    
+    logActivity(id, 'started', `Agent started with PID ${pid}`);
+    logActivity('john', 'agent_control', `Started ${id} agent`);
+    
+    res.json({ success: true, pid: parseInt(pid) });
+  });
+});
+
+app.post('/api/agents/:id/stop', (req, res) => {
+  const { id } = req.params;
+  const SWARM_DIR = '/Users/hazar/.openclaw/swarm';
+  const pidFile = path.join(SWARM_DIR, id, '.pid');
+  
+  if (!fs.existsSync(pidFile)) {
+    return res.json({ success: false, error: 'Agent not running' });
+  }
+  
+  try {
+    const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim());
+    process.kill(pid, 'SIGTERM');
+    fs.unlinkSync(pidFile);
+    
+    // Update status
+    const statuses = loadJSON(AGENT_STATUS_FILE, {});
+    statuses[id] = 'offline';
+    saveJSON(AGENT_STATUS_FILE, statuses);
+    
+    logActivity(id, 'stopped', `Agent stopped`);
+    logActivity('john', 'agent_control', `Stopped ${id} agent`);
+    
+    res.json({ success: true });
+  } catch (e) {
+    // Process might already be dead
+    if (fs.existsSync(pidFile)) fs.unlinkSync(pidFile);
+    
+    const statuses = loadJSON(AGENT_STATUS_FILE, {});
+    statuses[id] = 'offline';
+    saveJSON(AGENT_STATUS_FILE, statuses);
+    
+    res.json({ success: true, note: 'Process was already dead' });
+  }
+});
+
 // ============ TASKS API ============
 
 app.get('/api/tasks', (req, res) => {
