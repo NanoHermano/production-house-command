@@ -57,24 +57,32 @@ app.get('/api/agents', (req, res) => {
     try { soul = fs.readFileSync(soulPath, 'utf8'); } catch (e) {}
     try { config = JSON.parse(fs.readFileSync(configPath, 'utf8')); } catch (e) {}
     
-    // Parse SOUL.md for metadata (strip markdown formatting)
-    const clean = (s) => s ? s.trim().replace(/\*\*/g, '').replace(/\*/g, '') : '';
-    const emojiMatch = soul.match(/Emoji:\s*(.+)/i);
-    const roleMatch = soul.match(/Role:\s*(.+)/i);
-    const modelMatch = soul.match(/Model:\s*(.+)/i);
-    const levelMatch = soul.match(/Level:\s*(.+)/i);
+    // Parse SOUL.md for metadata - handle "- **Key:** Value" format
+    const getValue = (key) => {
+      const regex = new RegExp(`\\*\\*${key}:\\*\\*\\s*(.+)`, 'i');
+      const match = soul.match(regex);
+      if (match) return match[1].trim();
+      return null;
+    };
     
     // Get status
     const statuses = loadJSON(AGENT_STATUS_FILE, {});
     const status = statuses[dir] || 'offline';
     
+    // Extract values
+    const emoji = getValue('Emoji') || '🤖';
+    const role = getValue('Role') || config.capabilities?.join(', ') || 'Agent';
+    const model = getValue('Model') || config.model || 'claude-sonnet-4';
+    const levelRaw = getValue('Level') || config.level || 'L1';
+    const level = levelRaw.split('(')[0].trim(); // Remove "(execute on approval)" etc
+    
     agents.push({
       id: dir,
       name: dir.charAt(0).toUpperCase() + dir.slice(1),
-      level: levelMatch ? clean(levelMatch[1]) : config.level || 'L1',
-      model: modelMatch ? clean(modelMatch[1]) : config.model || 'claude-sonnet-4',
-      emoji: emojiMatch ? clean(emojiMatch[1]) : '🤖',
-      role: roleMatch ? clean(roleMatch[1]) : config.capabilities?.join(', ') || 'Agent',
+      level: level,
+      model: model,
+      emoji: emoji,
+      role: role,
       status: status,
       hasSoul: fs.existsSync(soulPath),
       hasMemory: fs.existsSync(memoryPath),

@@ -1,7 +1,6 @@
 {
   "name": "command-center-backend",
   "version": "0.1.0",
-  "type": "module",
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js"
