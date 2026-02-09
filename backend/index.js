@@ -8,10 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const WORKSPACE = process.env.WORKSPACE || '/Users/hazar/.openclaw/workspace';
+const HOME = process.env.HOME || '/root';
+const WORKSPACE = process.env.WORKSPACE || `${HOME}/.openclaw/workspace`;
 const AGENTS_DIR = path.join(WORKSPACE, 'agents');
-const AGENTS_CONFIG_DIR = '/Users/hazar/.openclaw/agents';
+const AGENTS_CONFIG_DIR = `${HOME}/.openclaw/agents`;
 const DATA_DIR = path.join(WORKSPACE, 'data');
+const SWARM_DIR = `${HOME}/.openclaw/swarm`;
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -143,7 +145,6 @@ app.put('/api/agents/:id/status', (req, res) => {
 // Agent Start/Stop
 app.post('/api/agents/:id/start', (req, res) => {
   const { id } = req.params;
-  const SWARM_DIR = '/Users/hazar/.openclaw/swarm';
   const pidFile = path.join(SWARM_DIR, id, '.pid');
   const configFile = path.join(SWARM_DIR, id, 'clawdbot.json');
   const logFile = path.join(SWARM_DIR, 'logs', `${id}.log`);
@@ -190,7 +191,6 @@ app.post('/api/agents/:id/start', (req, res) => {
 
 app.post('/api/agents/:id/stop', (req, res) => {
   const { id } = req.params;
-  const SWARM_DIR = '/Users/hazar/.openclaw/swarm';
   const pidFile = path.join(SWARM_DIR, id, '.pid');
   
   if (!fs.existsSync(pidFile)) {
